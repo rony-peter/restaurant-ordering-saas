@@ -1,26 +1,19 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@theme {
+  /* Match Flutter Primary Brand Colors */
+  --color-brand-50: #eef2ff;
+  --color-brand-500: #6366f1;
+  --color-brand-600: #4f46e5;
+  --color-brand-700: #4338ca;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* Dark Mode Surface Colors */
+  --color-surface-base: #0f172a;  /* slate-900 background */
+  --color-surface-card: #1e293b;  /* slate-800 card container */
+  --color-surface-border: #334155;/* slate-700 border */
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  /* KDS Order Status Colors */
+  --color-status-placed: #f59e0b;   /* Amber */
+  --color-status-preparing: #3b82f6;/* Blue */
+  --color-status-ready: #10b981;    /* Emerald */
 }
