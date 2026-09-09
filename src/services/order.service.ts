@@ -19,7 +19,7 @@ export const OrderService = {
     return response.data;
   },
 
-  // Get active orders filtered for KDS (excluding COMPLETED orders)
+  // Get active orders filtered for KDS
   async getActiveOrders(): Promise<Order[]> {
     const response = await api.get("/orders");
     return response.data.filter(
@@ -33,13 +33,24 @@ export const OrderService = {
     return response.data;
   },
 
-  // Place a new order (used by customer/PWA or manual entry)
+  // Get order receipt details
+  async getReceipt(orderId: string, restaurantId?: string): Promise<any> {
+    const response = await api.get(`/orders/${orderId}/receipt`, {
+      params: {
+        orderId,
+        restaurantId,
+      },
+    });
+    return response.data;
+  },
+
+  // Place a new order
   async createOrder(payload: CreateOrderPayload): Promise<Order> {
     const response = await api.post("/orders", payload);
     return response.data;
   },
 
-  // Update order status (e.g., ACCEPTED, PREPARING, READY, SERVED, COMPLETED)
+  // Update order status
   async updateStatus(orderId: string, status: string): Promise<Order> {
     const response = await api.patch(`/orders/${orderId}/status`, { status });
     return response.data;
@@ -51,7 +62,7 @@ export const OrderService = {
     return response.data;
   },
 
-  // Delete an order permanently (or purge completed KDS orders)
+  // Delete an order permanently
   async deleteOrder(orderId: string): Promise<void> {
     await api.delete(`/orders/${orderId}`);
   },

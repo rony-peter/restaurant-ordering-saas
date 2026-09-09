@@ -14,7 +14,6 @@ export interface OrderItem {
 
 export interface Order {
   id: string;
-  // Update status union type to match Prisma schema
   status: "PLACED" | "ACCEPTED" | "PREPARING" | "READY" | "SERVED" | "PAID";
   createdAt: string;
   table?: {
@@ -48,7 +47,7 @@ export default function OrderCard({ order, onUpdateStatus }: OrderCardProps) {
 
   // Color dynamic card header based on ticket status and delay
   const getHeaderColor = () => {
-    if (order.status === "PLACED") {
+    if (order.status === "PLACED" || order.status === "PAID" || order.status === "ACCEPTED") {
       return elapsedMinutes > 10
         ? "bg-red-500/20 border-red-500/50 text-red-400"
         : "bg-amber-500/20 border-amber-500/50 text-amber-400";
@@ -59,10 +58,14 @@ export default function OrderCard({ order, onUpdateStatus }: OrderCardProps) {
     return "bg-emerald-500/20 border-emerald-500/50 text-emerald-400";
   };
 
+  // ✅ FIX: Added explicit handling for PAID and ACCEPTED so orders flow into PREPARING -> READY -> SERVED
   const getNextStatusAction = () => {
-    if (order.status === "PLACED") return { label: "Start Cooking", next: "PREPARING", icon: Flame, color: "bg-blue-600 hover:bg-blue-500" };
-    if (order.status === "PREPARING") return { label: "Mark Ready", next: "READY", icon: CheckCircle, color: "bg-emerald-600 hover:bg-emerald-500" };
-    // Change next: "COMPLETED" to next: "SERVED"
+    if (order.status === "PLACED" || order.status === "PAID" || order.status === "ACCEPTED") {
+      return { label: "Start Cooking", next: "PREPARING", icon: Flame, color: "bg-blue-600 hover:bg-blue-500" };
+    }
+    if (order.status === "PREPARING") {
+      return { label: "Mark Ready", next: "READY", icon: CheckCircle, color: "bg-emerald-600 hover:bg-emerald-500" };
+    }
     return { label: "Bump / Serve", next: "SERVED", icon: CheckCircle, color: "bg-slate-700 hover:bg-slate-600" };
   };
 

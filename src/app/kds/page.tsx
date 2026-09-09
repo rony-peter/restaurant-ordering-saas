@@ -18,21 +18,22 @@ function KDSContent() {
   const prevOrdersCountRef = useRef(0);
 
   // 1. Fetch Active Kitchen Orders
-const fetchOrders = async () => {
-  try {
-    setLoading(true);
-    const response = await api.get("/orders");
-    // Filter out SERVED and PAID orders from active KDS board
-    const activeOrders = response.data.filter(
-      (o: Order) => o.status !== "SERVED" && o.status !== "PAID"
-    );
-    setOrders(activeOrders);
-  } catch (err) {
-    console.error("Failed to load kitchen orders:", err);
-  } finally {
-    setLoading(false);
-  }
-};
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get("/orders");
+      
+      // ✅ FIX: Keep PAID, PLACED, ACCEPTED, PREPARING, and READY orders active. Only filter out SERVED.
+      const activeOrders = response.data.filter(
+        (o: Order) => o.status !== "SERVED"
+      );
+      setOrders(activeOrders);
+    } catch (err) {
+      console.error("Failed to load kitchen orders:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // 2. Play Sound Alert on New Incoming Orders
   useEffect(() => {
@@ -62,17 +63,18 @@ const fetchOrders = async () => {
     });
 
     socket.on(
-  "order:status_updated",
-  ({ orderId, status }: { orderId: string; status: any }) => {
-    if (status === "SERVED" || status === "PAID") {
-      setOrders((prev) => prev.filter((o) => o.id !== orderId));
-    } else {
-      setOrders((prev) =>
-        prev.map((o) => (o.id === orderId ? { ...o, status } : o))
-      );
-    }
-  }
-);
+      "order:status_updated",
+      ({ orderId, status }: { orderId: string; status: any }) => {
+        // ✅ FIX: Only filter out when status becomes SERVED
+        if (status === "SERVED") {
+          setOrders((prev) => prev.filter((o) => o.id !== orderId));
+        } else {
+          setOrders((prev) =>
+            prev.map((o) => (o.id === orderId ? { ...o, status } : o))
+          );
+        }
+      }
+    );
 
     return () => {
       socket.off("order:created");
@@ -82,24 +84,24 @@ const fetchOrders = async () => {
   }, [user, token]);
 
   // 4. Update Order Status Handler
-const handleUpdateStatus = async (orderId: string, nextStatus: string) => {
-  try {
-    if (nextStatus === "SERVED" || nextStatus === "PAID") {
-      setOrders((prev) => prev.filter((o) => o.id !== orderId));
-    } else {
-      setOrders((prev) =>
-        prev.map((o) =>
-          o.id === orderId ? { ...o, status: nextStatus as any } : o
-        )
-      );
-    }
+  const handleUpdateStatus = async (orderId: string, nextStatus: string) => {
+    try {
+      if (nextStatus === "SERVED") {
+        setOrders((prev) => prev.filter((o) => o.id !== orderId));
+      } else {
+        setOrders((prev) =>
+          prev.map((o) =>
+            o.id === orderId ? { ...o, status: nextStatus as any } : o
+          )
+        );
+      }
 
-    await api.patch(`/orders/${orderId}/status`, { status: nextStatus });
-  } catch (err) {
-    console.error("Failed to update status:", err);
-    fetchOrders(); // Rollback on failure
-  }
-};
+      await api.patch(`/orders/${orderId}/status`, { status: nextStatus });
+    } catch (err) {
+      console.error("Failed to update status:", err);
+      fetchOrders(); // Rollback on failure
+    }
+  };
 
   const toggleSound = () => {
     const nextState = !soundEnabled;

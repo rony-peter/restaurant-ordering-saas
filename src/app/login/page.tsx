@@ -1,18 +1,25 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation"; // 1. Import useRouter
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { AuthService } from "@/services/auth.service";
-import { UtensilsCrossed, Lock, Mail, AlertCircle } from "lucide-react";
+import { UtensilsCrossed, Lock, Mail, AlertCircle, RefreshCw } from "lucide-react";
 
 export default function LoginPage() {
-  const router = useRouter(); // 2. Initialize router
-  const { login } = useAuth();
+  const router = useRouter();
+  const { login, user, loading: authLoading } = useAuth(); // Extracted user & loading state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Redirect if user is already logged in
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.replace("/kds");
+    }
+  }, [user, authLoading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +39,7 @@ export default function LoginPage() {
       // Save token and state
       login(token, userData);
 
-      // 3. Redirect user to KDS page upon successful login
+      // Redirect user to KDS page upon successful login
       router.push("/kds");
     } catch (err: any) {
       setError(
@@ -42,6 +49,16 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+
+  // Prevent form flicker while checking localStorage authentication state or redirecting
+  if (authLoading || user) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-slate-400">
+        <RefreshCw className="w-8 h-8 animate-spin mb-3 text-indigo-500" />
+        <p className="text-sm font-medium">Authenticating session...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
