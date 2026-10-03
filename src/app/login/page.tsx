@@ -2,22 +2,28 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { AuthService } from "@/services/auth.service";
 import { UtensilsCrossed, Lock, Mail, AlertCircle, RefreshCw } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, user, loading: authLoading } = useAuth(); // Extracted user & loading state
+  const { login, user, loading: authLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Helper for role-based destination
+  const getRedirectPath = (role?: string) => {
+    return role === "COOK" ? "/kds" : "/orders";
+  };
+
   // Redirect if user is already logged in
   useEffect(() => {
     if (!authLoading && user) {
-      router.replace("/kds");
+      router.replace(getRedirectPath(user.role));
     }
   }, [user, authLoading, router]);
 
@@ -39,8 +45,8 @@ export default function LoginPage() {
       // Save token and state
       login(token, userData);
 
-      // Redirect user to KDS page upon successful login
-      router.push("/kds");
+      // Redirect user based on their assigned role
+      router.push(getRedirectPath(userData.role));
     } catch (err: any) {
       setError(
         err.response?.data?.message || err.message || "Failed to log in. Check your credentials."
@@ -50,7 +56,7 @@ export default function LoginPage() {
     }
   };
 
-  // Prevent form flicker while checking localStorage authentication state or redirecting
+  // Prevent form flicker while checking authentication state or redirecting
   if (authLoading || user) {
     return (
       <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-slate-400">
@@ -69,7 +75,7 @@ export default function LoginPage() {
           </div>
           <h1 className="text-2xl font-bold text-white">Staff Portal Login</h1>
           <p className="text-slate-400 text-sm mt-1">
-            Sign in to access KDS and Manager tools
+            Sign in to access KDS, Orders, and Management tools
           </p>
         </div>
 
@@ -92,7 +98,7 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="cook@restaurant.com"
+                placeholder="staff@restaurant.com"
                 className="w-full pl-11 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-sm"
               />
             </div>
@@ -123,6 +129,16 @@ export default function LoginPage() {
             {loading ? "Authenticating..." : "Sign In"}
           </button>
         </form>
+
+        <div className="mt-6 text-center text-xs text-slate-400 border-t border-slate-700/60 pt-4">
+          New restaurant owner?{" "}
+          <Link
+            href="/register"
+            className="text-indigo-400 hover:text-indigo-300 font-semibold underline underline-offset-2"
+          >
+            Register your restaurant
+          </Link>
+        </div>
       </div>
     </div>
   );

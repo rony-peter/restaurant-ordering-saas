@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Clock, CheckCircle, Flame } from "lucide-react";
+import { Clock, CheckCircle, Flame, User, Phone } from "lucide-react";
 
 export interface OrderItem {
   id: string;
@@ -14,6 +14,8 @@ export interface OrderItem {
 
 export interface Order {
   id: string;
+  customerName?: string;
+  customerPhone?: string;
   status: "PLACED" | "ACCEPTED" | "PREPARING" | "READY" | "SERVED" | "PAID";
   createdAt: string;
   table?: {
@@ -30,7 +32,6 @@ interface OrderCardProps {
 export default function OrderCard({ order, onUpdateStatus }: OrderCardProps) {
   const [elapsedMinutes, setElapsedMinutes] = useState(0);
 
-  // Track elapsed time since order creation
   useEffect(() => {
     const calculateElapsed = () => {
       const created = new Date(order.createdAt).getTime();
@@ -40,12 +41,11 @@ export default function OrderCard({ order, onUpdateStatus }: OrderCardProps) {
     };
 
     calculateElapsed();
-    const interval = setInterval(calculateElapsed, 10000); // Update every 10 seconds
+    const interval = setInterval(calculateElapsed, 10000);
 
     return () => clearInterval(interval);
   }, [order.createdAt]);
 
-  // Color dynamic card header based on ticket status and delay
   const getHeaderColor = () => {
     if (order.status === "PLACED" || order.status === "PAID" || order.status === "ACCEPTED") {
       return elapsedMinutes > 10
@@ -58,7 +58,6 @@ export default function OrderCard({ order, onUpdateStatus }: OrderCardProps) {
     return "bg-emerald-500/20 border-emerald-500/50 text-emerald-400";
   };
 
-  // ✅ FIX: Added explicit handling for PAID and ACCEPTED so orders flow into PREPARING -> READY -> SERVED
   const getNextStatusAction = () => {
     if (order.status === "PLACED" || order.status === "PAID" || order.status === "ACCEPTED") {
       return { label: "Start Cooking", next: "PREPARING", icon: Flame, color: "bg-blue-600 hover:bg-blue-500" };
@@ -77,11 +76,19 @@ export default function OrderCard({ order, onUpdateStatus }: OrderCardProps) {
       {/* Ticket Header */}
       <div>
         <div className={`p-4 border-b flex justify-between items-center ${getHeaderColor()}`}>
-          <div>
-            <span className="text-xs uppercase tracking-wider font-semibold opacity-75">
-              Table {order.table?.tableNumber || "N/A"}
-            </span>
-            <h3 className="text-lg font-bold text-white">Order #{order.id.slice(-4)}</h3>
+          <div className="flex items-center gap-3">
+            {/* Prominent Table Number Badge */}
+            <div className="bg-indigo-600 text-white font-black px-3 py-1.5 rounded-xl text-base shadow-md border border-indigo-400/30">
+              T-{order.table?.tableNumber || "N/A"}
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-white">Order #{order.id.slice(-4)}</h3>
+              {order.customerName && (
+                <p className="text-xs text-slate-300 font-medium flex items-center gap-1 mt-0.5">
+                  <User className="w-3 h-3 text-indigo-300" /> {order.customerName}
+                </p>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900/60 text-xs font-semibold">
             <Clock className="w-3.5 h-3.5" />

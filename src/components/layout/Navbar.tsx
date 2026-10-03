@@ -12,6 +12,8 @@ import {
   LogOut,
   User,
   BookOpen,
+  Users,
+  CreditCard,
 } from "lucide-react";
 
 export default function Navbar() {
@@ -28,11 +30,12 @@ export default function Navbar() {
     { href: "/tables", label: "Tables", icon: LayoutGrid, show: isManagerOrAdmin },
     { href: "/menu", label: "Menu", icon: BookOpen, show: isManagerOrAdmin },
     { href: "/analytics", label: "Analytics", icon: BarChart3, show: user.role === "ADMIN" },
+    { href: "/staff", label: "Staff", icon: Users, show: user.role === "ADMIN" },
+    { href: "/settings/billing", label: "Billing", icon: CreditCard, show: user.role === "ADMIN" },
   ];
 
   return (
     <nav className="bg-slate-800 border-b border-slate-700 px-6 py-3 flex items-center justify-between sticky top-0 z-50">
-      {/* Brand Logo & Title */}
       <div className="flex items-center gap-8">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center font-bold text-white shadow-md">
@@ -43,7 +46,6 @@ export default function Navbar() {
           </span>
         </div>
 
-        {/* Navigation Tabs */}
         <div className="flex items-center gap-1">
           {navLinks
             .filter((link) => link.show)
@@ -69,7 +71,6 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* User Info & Actions */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-3 bg-slate-900/60 border border-slate-700/60 px-3.5 py-1.5 rounded-xl">
           <div className="w-7 h-7 rounded-full bg-slate-700 flex items-center justify-center text-slate-300">

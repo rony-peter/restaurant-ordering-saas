@@ -5,7 +5,7 @@ import { OrderService } from "@/services/order.service";
 import { Order } from "@/components/kds/OrderCard";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useAuth } from "@/context/AuthContext";
-import { RefreshCw, Search, Filter, Printer, X, CreditCard, Wallet } from "lucide-react";
+import { RefreshCw, Search, Filter, Printer, X, CreditCard, Wallet, User, Phone } from "lucide-react";
 
 interface ReceiptData {
   receiptId: string;
@@ -69,7 +69,10 @@ function OrdersContent() {
     const matchesStatus = statusFilter === "ALL" || order.status === statusFilter;
     const matchesSearch =
       order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.table?.tableNumber?.toString().includes(searchQuery);
+      order.table?.tableNumber?.toString().includes(searchQuery) ||
+      (order.customerName && order.customerName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (order.customerPhone && order.customerPhone.includes(searchQuery));
+
     return matchesStatus && matchesSearch;
   });
 
@@ -101,7 +104,7 @@ function OrdersContent() {
           <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
           <input
             type="text"
-            placeholder="Search by Order ID or Table Number..."
+            placeholder="Search by Order ID, Customer Name, Phone, or Table Number..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-slate-800/80 border border-slate-700/80 rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -144,6 +147,7 @@ function OrdersContent() {
               <tr>
                 <th className="px-6 py-3.5">Order ID</th>
                 <th className="px-6 py-3.5">Table</th>
+                <th className="px-6 py-3.5">Customer</th>
                 <th className="px-6 py-3.5">Items</th>
                 <th className="px-6 py-3.5">Payment Method</th>
                 <th className="px-6 py-3.5">Status</th>
@@ -165,6 +169,24 @@ function OrdersContent() {
                     </td>
                     <td className="px-6 py-4 font-bold text-white">
                       Table {order.table?.tableNumber || "N/A"}
+                    </td>
+                    <td className="px-6 py-4">
+                      {order.customerName || order.customerPhone ? (
+                        <div className="space-y-1">
+                          <p className="font-semibold text-white flex items-center gap-1.5">
+                            <User className="w-3.5 h-3.5 text-indigo-400" />
+                            {order.customerName || "Guest"}
+                          </p>
+                          {order.customerPhone && (
+                            <p className="text-xs text-slate-400 flex items-center gap-1.5 font-mono">
+                              <Phone className="w-3.5 h-3.5 text-emerald-400" />
+                              {order.customerPhone}
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-slate-500 italic">Walk-in Guest</span>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <ul className="space-y-1">
