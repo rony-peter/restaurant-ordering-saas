@@ -145,7 +145,7 @@ export default function AddMenuItemModal({ isOpen, onClose, onSuccess }: Props) 
             {/* Price */}
             <div>
               <label className="block text-xs font-semibold text-slate-400 mb-1">
-                Price ($) <span className="text-red-400">*</span>
+                Price (₹) <span className="text-red-400">*</span>
               </label>
               <input
                 type="number"

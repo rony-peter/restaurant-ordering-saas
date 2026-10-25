@@ -13,7 +13,7 @@ import {
   User,
   BookOpen,
   Users,
-  CreditCard,
+  Settings,
 } from "lucide-react";
 
 export default function Navbar() {
@@ -31,7 +31,7 @@ export default function Navbar() {
     { href: "/menu", label: "Menu", icon: BookOpen, show: isManagerOrAdmin },
     { href: "/analytics", label: "Analytics", icon: BarChart3, show: user.role === "ADMIN" },
     { href: "/staff", label: "Staff", icon: Users, show: user.role === "ADMIN" },
-    { href: "/settings/billing", label: "Billing", icon: CreditCard, show: user.role === "ADMIN" },
+    { href: "/settings", label: "Settings", icon: Settings, show: user.role === "ADMIN" },
   ];
 
   return (

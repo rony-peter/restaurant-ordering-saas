@@ -9,6 +9,8 @@ export interface RegisterAdminPayload {
   restaurantName: string;
   address?: string;
   phone?: string;
+  gstin?: string | undefined;
+  consentTnc?: boolean | undefined;
   taxRate?: number;
   currency?: string;
   email: string;

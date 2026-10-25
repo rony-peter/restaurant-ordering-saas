@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { api } from "@/lib/api"; // Updated to named import
+import { api } from "@/lib/api";
 import { CurrentSubscriptionResponse, SubscriptionTier, CheckoutResponse } from "@/types/subscription";
 
 declare global {
@@ -34,18 +34,21 @@ export function useSubscription() {
     fetchSubscription();
   }, [fetchSubscription]);
 
-  const initiateCheckout = async (tier: SubscriptionTier) => {
+  const initiateCheckout = async (tier: SubscriptionTier, billingCycle: "monthly" | "annual" = "monthly") => {
     try {
       setSubscribing(true);
       setError(null);
 
-      const { data } = await api.post<CheckoutResponse>("/subscriptions/checkout", { tier });
+      const { data } = await api.post<CheckoutResponse>("/subscriptions/checkout", { 
+        tier, 
+        billingCycle 
+      });
 
       const options = {
         key: data.keyId,
         subscription_id: data.razorpaySubscriptionId,
         name: "OpsPortal Subscription",
-        description: `Upgrade plan to ${tier}`,
+        description: `Upgrade plan to ${tier} (${billingCycle})`,
         handler: async function (response: any) {
           try {
             await api.post("/subscriptions/verify", {
