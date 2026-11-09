@@ -41,8 +41,19 @@ export interface CurrentSubscriptionResponse {
   usage: SubscriptionUsage;
 }
 
+// POST /subscriptions/checkout
 export interface CheckoutResponse {
-  subscriptionId: string;
   razorpaySubscriptionId: string;
+  shortUrl?: string;
   keyId: string;
+}
+
+// POST /subscriptions/verify and /subscriptions/sync
+export interface VerifyResponse {
+  activated?: boolean;
+  razorpayStatus?: string;
+  subscription: {
+    tier: SubscriptionTier;
+    status: SubscriptionStatus;
+  };
 }

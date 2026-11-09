@@ -1,22 +1,39 @@
 "use client";
 
 import React, { useState } from "react";
-import { SubscriptionTier } from "@/types/subscription";
-import { useSubscription } from "../hooks/useSubscription";
+import { SubscriptionTier, SubscriptionStatus } from "@/types/subscription";
+import type { SubscriptionApi } from "../hooks/useSubscription";
 
 interface SubscriptionPlansModalProps {
   isOpen: boolean;
   onClose: () => void;
+  subscription: SubscriptionApi["subscription"];
+  initiateCheckout: SubscriptionApi["initiateCheckout"];
+  subscribing: boolean;
+  error: string | null;
 }
 
-export function SubscriptionPlansModal({ isOpen, onClose }: SubscriptionPlansModalProps) {
-  const { subscription, initiateCheckout, subscribing, error } = useSubscription();
+// Where "Contact Sales" goes. Set NEXT_PUBLIC_MARKETING_URL to your website's address.
+const CONTACT_URL = `${process.env.NEXT_PUBLIC_MARKETING_URL ?? ""}/#contact`;
+
+export function SubscriptionPlansModal({
+  isOpen,
+  onClose,
+  subscription,
+  initiateCheckout,
+  subscribing,
+  error,
+}: SubscriptionPlansModalProps) {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("annual");
 
   if (!isOpen) return null;
 
   const currentTier = subscription?.tier || SubscriptionTier.FREE;
+  const isActive = subscription?.status === SubscriptionStatus.ACTIVE;
+  const hasPaidPlan = currentTier !== SubscriptionTier.FREE && isActive;
 
+  // NOTE: the Razorpay plan amounts must be created to match these prices (GST included if you charge it).
+  // Wording about a 14-day trial is removed because the first payment is taken as soon as the owner subscribes.
   const PLAN_CARDS = [
     {
       tier: SubscriptionTier.FREE,
@@ -25,12 +42,7 @@ export function SubscriptionPlansModal({ isOpen, onClose }: SubscriptionPlansMod
       period: "/ month",
       subtext: "Free forever",
       description: "Ideal for single-location cafes testing digital QR ordering.",
-      features: [
-        "5 Active Tables",
-        "20 Menu Items",
-        "Basic QR Ordering",
-        "1 Staff Account",
-      ],
+      features: ["5 Active Tables", "20 Menu Items", "Basic QR Ordering", "1 Staff Account"],
       notIncluded: ["Kitchen Display System (KDS)", "Analytics & Reports"],
     },
     {
@@ -38,22 +50,16 @@ export function SubscriptionPlansModal({ isOpen, onClose }: SubscriptionPlansMod
       name: "BASIC",
       price: billingCycle === "annual" ? "₹399" : "₹499",
       period: "/ month + GST",
-      subtext: billingCycle === "annual" ? "Billed ₹4,788 per year after trial" : "Billed monthly after trial",
+      subtext: billingCycle === "annual" ? "Billed ₹4,788 per year + GST" : "Billed monthly + GST",
       description: "Perfect for growing bistros needing live Kitchen Display (KDS).",
-      features: [
-        "15 Active Tables",
-        "100 Menu Items",
-        "Real-Time KDS Feed",
-        "3 Staff Accounts",
-        "Standard Analytics",
-      ],
+      features: ["15 Active Tables", "100 Menu Items", "Real-Time KDS Feed", "3 Staff Accounts", "Standard Analytics"],
     },
     {
       tier: SubscriptionTier.PRO,
       name: "PRO",
       price: billingCycle === "annual" ? "₹1,599" : "₹1,999",
       period: "/ month + GST",
-      subtext: billingCycle === "annual" ? "Billed ₹19,188 per year after trial" : "Billed monthly after trial",
+      subtext: billingCycle === "annual" ? "Billed ₹19,188 per year + GST" : "Billed monthly + GST",
       popular: true,
       description: "Our complete suite for busy restaurants scaling operations.",
       features: [
@@ -81,10 +87,12 @@ export function SubscriptionPlansModal({ isOpen, onClose }: SubscriptionPlansMod
     },
   ];
 
-  const handleSelectPlan = async (tier: SubscriptionTier) => {
-    if (tier === currentTier || tier === SubscriptionTier.FREE) return;
-    await initiateCheckout(tier, billingCycle);
-  };
+  const buttonStyle = (isDisabled: boolean, popular?: boolean) =>
+    isDisabled
+      ? "bg-slate-800/50 text-slate-500 cursor-not-allowed border border-slate-800"
+      : popular
+      ? "bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-600/20 active:scale-95"
+      : "bg-slate-800 text-white hover:bg-slate-700 active:scale-95 border border-slate-700";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
@@ -102,7 +110,8 @@ export function SubscriptionPlansModal({ isOpen, onClose }: SubscriptionPlansMod
         <div className="text-center max-w-2xl mx-auto mb-6">
           <h2 className="text-3xl font-extrabold text-white">Choose the Right Plan for OpsPortal</h2>
           <p className="mt-2 text-slate-400 text-sm">
-            Every paid plan starts with a 14-day free trial. Scale your operations with zero risk.
+            Prices are per outlet and exclude GST. You can cancel any time and keep your plan until the end of the
+            period you have paid for.
           </p>
 
           <div className="inline-flex items-center bg-slate-950 border border-slate-800 p-1.5 rounded-full mt-6">
@@ -120,7 +129,10 @@ export function SubscriptionPlansModal({ isOpen, onClose }: SubscriptionPlansMod
                 billingCycle === "annual" ? "bg-indigo-600 text-white shadow-md" : "text-slate-400 hover:text-white"
               }`}
             >
-              Annual Billing <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-[10px] rounded-full uppercase tracking-wider font-extrabold">Save 20%</span>
+              Annual Billing{" "}
+              <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-[10px] rounded-full uppercase tracking-wider font-extrabold">
+                Save 20%
+              </span>
             </button>
           </div>
         </div>
@@ -133,8 +145,18 @@ export function SubscriptionPlansModal({ isOpen, onClose }: SubscriptionPlansMod
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {PLAN_CARDS.map((plan) => {
-            const isCurrent = currentTier === plan.tier;
+            const isCurrent = currentTier === plan.tier && isActive;
             const isFree = plan.tier === SubscriptionTier.FREE;
+            const isEnterprise = plan.tier === SubscriptionTier.ENTERPRISE;
+            // Switching between paid plans isn't built yet, so those buttons are disabled.
+            const switchBlocked = hasPaidPlan && !isCurrent && !isEnterprise && !isFree;
+            const disabled = isCurrent || isFree || subscribing || switchBlocked;
+
+            let label = `Choose ${plan.name}`;
+            if (isCurrent) label = "Active Plan";
+            else if (isFree) label = "Default Plan";
+            else if (switchBlocked) label = "Contact support to switch";
+            else if (subscribing) label = "Opening payment...";
 
             return (
               <div
@@ -186,21 +208,27 @@ export function SubscriptionPlansModal({ isOpen, onClose }: SubscriptionPlansMod
                 </div>
 
                 <div className="mt-6 pt-4 border-t border-slate-800">
-                  <button
-                    onClick={() => handleSelectPlan(plan.tier)}
-                    disabled={isCurrent || isFree || subscribing}
-                    className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs transition focus:outline-none ${
-                      isCurrent
-                        ? "bg-slate-800 text-slate-500 cursor-default border border-slate-700/50"
-                        : isFree
-                        ? "bg-slate-800/50 text-slate-500 cursor-not-allowed border border-slate-800"
-                        : plan.popular
-                        ? "bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-600/20 active:scale-95"
-                        : "bg-slate-800 text-white hover:bg-slate-700 active:scale-95 border border-slate-700"
-                    }`}
-                  >
-                    {subscribing ? "Processing..." : isCurrent ? "Active Plan" : isFree ? "Default Plan" : `Purchase ${plan.name}`}
-                  </button>
+                  {isEnterprise ? (
+                    <a
+                      href={CONTACT_URL}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block w-full text-center py-2.5 px-4 rounded-xl font-bold text-xs bg-slate-800 text-white hover:bg-slate-700 border border-slate-700 transition"
+                    >
+                      Contact Sales
+                    </a>
+                  ) : (
+                    <button
+                      onClick={() => initiateCheckout(plan.tier, billingCycle)}
+                      disabled={disabled}
+                      className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs transition focus:outline-none ${buttonStyle(
+                        disabled && !subscribing,
+                        plan.popular
+                      )}`}
+                    >
+                      {label}
+                    </button>
+                  )}
                 </div>
               </div>
             );
